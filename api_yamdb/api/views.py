@@ -1,19 +1,76 @@
 from django.shortcuts import get_object_or_404
+
+from rest_framework import filters, status, viewsets, permissions
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
-from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import Title, User
-from .serializers import TitleSerializer, TokenSerializer, UserSerializer, SignUpSerializer
+from reviews.models import Category, Genre, Title, User
+from .serializers import (
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+    TitleGetSerializer,
+    TokenSerializer,
+    UserSerializer,
+    SignUpSerializer,
+)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     # authentication_classes = ()
+    pagination_class = LimitOffsetPagination
+
+    def get_serializer_class(self):
+        print(self.request)
+        if self.action == 'list':
+            return TitleGetSerializer
+        return TitleSerializer
 
 
+class GenreViewSet(viewsets.ModelViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    # authentication_classes = ()
+    lookup_field = 'slug'
+    http_method_names = (
+        'get',
+        'post',
+        'delete',
+    )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    pagination_class = LimitOffsetPagination
+
+    def destroy(self, request, *args, **kwargs):
+        if self.request.user == permissions.IsAdminUser:
+            return super().destroy(request, *args, **kwargs)
+        raise PermissionDenied()
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    # authentication_classes = ()
+    lookup_field = 'slug'
+    http_method_names = (
+        'get',
+        'post',
+        'delete',
+    )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    pagination_class = LimitOffsetPagination
+
+    def destroy(self, request, *args, **kwargs):
+        if self.request.user == permissions.IsAdminUser:
+            return super().destroy(request, *args, **kwargs)
+        raise PermissionDenied()
+        
+        
 class UserViewSet(viewsets.ModelViewSet):
     "Получить список всех пользователей. Права доступа: Администратор."
     queryset = User.objects.all()

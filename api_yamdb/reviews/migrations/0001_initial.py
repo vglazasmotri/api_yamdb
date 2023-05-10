@@ -19,14 +19,16 @@ class Migration(migrations.Migration):
             name='Category',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('slug', models.SlugField()),
+                ('name', models.CharField(default='Категория отсутствует', max_length=256, unique=True)),
+                ('slug', models.SlugField(unique=True)),
             ],
         ),
         migrations.CreateModel(
             name='Genre',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('slug', models.SlugField()),
+                ('name', models.CharField(default='Жанр отсутствует', max_length=256, unique=True)),
+                ('slug', models.SlugField(unique=True)),
             ],
         ),
         migrations.CreateModel(
@@ -35,10 +37,10 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=256)),
                 ('year', models.IntegerField()),
-                ('rating', models.IntegerField()),
+                ('rating', models.IntegerField(default=0)),
                 ('description', models.TextField()),
                 ('category', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='reviews.category')),
-                ('genre', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='reviews.genre')),
+                ('genre', models.ManyToManyField(to='reviews.Genre')),
             ],
         ),
         migrations.CreateModel(
