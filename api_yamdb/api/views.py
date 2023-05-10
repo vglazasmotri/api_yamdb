@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
-
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.exceptions import PermissionDenied
@@ -83,13 +84,22 @@ def sign_up(request):
     Регистрация нового пользователя.
     Получить код подтверждения на переданный email.
     Права доступа: Доступно без токена.
-    Использовать имя 'me' в качестве username запрещено.
-    Поля email и username должны быть уникальными.
     """
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    # Отпрака письма с кодом подтверждения.
+    user = get_object_or_404(
+        User,
+        username=serializer.validated_data["username"]
+    )
+    confirmation_code = default_token_generator.make_token(user)
+    send_mail(
+        'Подтверждение регистрации api_yamdb.',
+        f'Код подтверждения: {confirmation_code}',
+        'from@api_yamdb.com',
+        [user.email],
+        fail_silently=True,
+    )
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -105,9 +115,9 @@ def get_token(request):
         User,
         username=serializer.validated_data["username"]
     )
-    # Получение из модели и проверка кода подтверждения
-    confirmation_code = True
-    if confirmation_code == True:
+    if default_token_generator.check_token(
+        user, serializer.validated_data["confirmation_code"]
+    ):
         token = AccessToken.for_user(user)
-        return Response({"token": str(token)}, status=status.HTTP_200_OK)
+        return Response({'token': str(token)}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

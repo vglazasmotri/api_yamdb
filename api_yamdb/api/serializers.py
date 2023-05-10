@@ -71,6 +71,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    """
+    Поля email и username должны быть уникальными.
+    Использовать имя 'me' в качестве username запрещено.
+    """
     username = serializers.CharField(
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
