@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import filters, viewsets, permissions
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.exceptions import PermissionDenied
 
@@ -27,11 +27,14 @@ class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     # authentication_classes = ()
+    lookup_field = 'slug'
     http_method_names = (
         'get',
         'post',
         'delete',
     )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
     def destroy(self, request, *args, **kwargs):
@@ -44,11 +47,14 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     # authentication_classes = ()
+    lookup_field = 'slug'
     http_method_names = (
         'get',
         'post',
         'delete',
     )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
     def destroy(self, request, *args, **kwargs):
