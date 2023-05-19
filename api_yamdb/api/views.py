@@ -6,11 +6,11 @@ from rest_framework import filters, status, viewsets, permissions
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import  action, api_view, permission_classes
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title, User
-from .permissions import (IsAdminModeratorOwnerOrReadOnly)
+from .permissions import (IsAdminModeratorOwnerOrReadOnly, IsAdmin)
 from .serializers import (
     CategorySerializer,
     GenreSerializer,
@@ -82,10 +82,32 @@ class UserViewSet(viewsets.ModelViewSet):
     "Получить список всех пользователей. Права доступа: Администратор."
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    lookup_field = 'username'
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    @action(
+        methods=['GET', 'PATCH'], detail=False, url_path='me',
+        permission_classes=(permissions.IsAuthenticated,)
+    )
+    def get_update_me(self, request):
+        serializer = self.get_serializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+        if serializer.is_valid():
+            if self.request.method == 'PATCH':
+                serializer.validated_data.pop('role', None)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 @api_view(["POST"])
-def sign_up(request):
+@permission_classes([permissions.AllowAny])
+def sign_up(request): 
     """
     Регистрация нового пользователя.
     Получить код подтверждения на переданный email.
@@ -93,7 +115,6 @@ def sign_up(request):
     """
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
     user = get_object_or_404(
         User,
         username=serializer.validated_data["username"]
@@ -110,6 +131,7 @@ def sign_up(request):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def get_token(request):
     """
     Получение JWT-токена в обмен на username и confirmation code.

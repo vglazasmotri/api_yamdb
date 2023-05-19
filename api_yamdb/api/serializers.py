@@ -1,9 +1,10 @@
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
-
-from rest_framework.validators import UniqueValidator
 from reviews.models import Category, Comment, Genre, Review, Title, User
+from .validators import validate_username
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -72,28 +73,28 @@ class UserSerializer(serializers.ModelSerializer):
                   'last_name', 'bio', 'role')
 
 
-class SignUpSerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.Serializer):
     """
     Поля email и username должны быть уникальными.
     Использовать имя 'me' в качестве username запрещено.
     """
     username = serializers.CharField(
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        required=True, max_length=150,
+        validators=(validate_username, UnicodeUsernameValidator())
     )
-    email = serializers.EmailField(
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
+    email = serializers.EmailField(required=True, max_length=254)
 
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                'Имя пользователя <me> недопустимо.'
+    def validate(self, data):
+        try:
+            User.objects.get_or_create(
+                username=data.get('username'),
+                email=data.get('email')
             )
-        return value
-
-    class Meta:
-        fields = ('username', 'email')
-        model = User
+        except IntegrityError:
+            raise serializers.ValidationError(
+                'Пользователь с таким username или email уже существует.'
+            )
+        return data
 
 
 class TokenSerializer(serializers.Serializer):
