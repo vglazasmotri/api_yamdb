@@ -6,11 +6,15 @@ from rest_framework import filters, status, viewsets, permissions
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
-from rest_framework.decorators import  action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title, User
-from .permissions import (IsAdminModeratorOwnerOrReadOnly, IsAdmin)
+from .permissions import (
+    IsAdminModeratorOwnerOrReadOnly,
+    IsAdmin,
+    IsAdminOrReadOnly,
+)
 from .serializers import (
     CategorySerializer,
     GenreSerializer,
@@ -25,10 +29,10 @@ from .serializers import (
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all().annotate(
-        Avg("reviews__score")
-    ).order_by("name")
-    # authentication_classes = ()
+    queryset = (
+        Title.objects.all().annotate(Avg("reviews__score")).order_by("name")
+    )
+    permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
 
     def get_serializer_class(self):
@@ -41,7 +45,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    # authentication_classes = ()
+    permission_classes = (IsAdminOrReadOnly,)
     lookup_field = 'slug'
     http_method_names = (
         'get',
@@ -61,7 +65,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    # authentication_classes = ()
+    permission_classes = (IsAdminOrReadOnly,)
     lookup_field = 'slug'
     http_method_names = (
         'get',
@@ -86,28 +90,26 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     @action(
-        methods=['GET', 'PATCH'], detail=False, url_path='me',
-        permission_classes=(permissions.IsAuthenticated,)
+        methods=['GET', 'PATCH'],
+        detail=False,
+        url_path='me',
+        permission_classes=(permissions.IsAuthenticated,),
     )
     def get_update_me(self, request):
         serializer = self.get_serializer(
-            request.user,
-            data=request.data,
-            partial=True
+            request.user, data=request.data, partial=True
         )
         if serializer.is_valid():
             if self.request.method == 'PATCH':
                 serializer.validated_data.pop('role', None)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(
-            serializer.errors, status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
-def sign_up(request): 
+def sign_up(request):
     """
     Регистрация нового пользователя.
     Получить код подтверждения на переданный email.
@@ -116,8 +118,7 @@ def sign_up(request):
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
-        User,
-        username=serializer.validated_data["username"]
+        User, username=serializer.validated_data["username"]
     )
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
@@ -140,8 +141,7 @@ def get_token(request):
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
-        User,
-        username=serializer.validated_data["username"]
+        User, username=serializer.validated_data["username"]
     )
     if default_token_generator.check_token(
         user, serializer.validated_data["confirmation_code"]
