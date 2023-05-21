@@ -8,12 +8,12 @@ from reviews.models import Category, Comment, Genre, Review, Title, User
 
 FILE_DIR = settings.STATICFILES_DIRS[0] / 'data'
 FILE_TO_MODEL = {
+    'users.csv': User,
     'category.csv': Category,
     'comments.csv': Comment,
     'genre.csv': Genre,
     'review.csv': Review,
     'titles.csv': Title,
-    'users.csv': User,
     'genre_title.csv': Title.genre.through,
 }
 
@@ -28,6 +28,5 @@ class Command(BaseCommand):
                     for key in ('category', 'author'):
                         if key in data:
                             data[f'{key}_id'] = data.pop(key)
-                        filled_data = model(**data)
-                        filled_data.save
+                    model.objects.update_or_create(**data)
         self.stdout.write('The data from sheets imported.')

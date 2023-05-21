@@ -4,7 +4,6 @@ from django.core.mail import send_mail
 from django.db.models import Avg
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework_simplejwt.tokens import AccessToken
@@ -36,8 +35,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
 
     def get_serializer_class(self):
-        print(self.request)
-        if self.action == 'list':
+        if self.request.method in permissions.SAFE_METHODS:
             return TitleGetSerializer
         return TitleSerializer
 
@@ -56,11 +54,6 @@ class GenreViewSet(viewsets.ModelViewSet):
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
-    def destroy(self, request, *args, **kwargs):
-        if self.request.user == permissions.IsAdminUser:
-            return super().destroy(request, *args, **kwargs)
-        raise PermissionDenied()
-
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -75,11 +68,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
-
-    def destroy(self, request, *args, **kwargs):
-        if self.request.user == permissions.IsAdminUser:
-            return super().destroy(request, *args, **kwargs)
-        raise PermissionDenied()
 
 
 class UserViewSet(viewsets.ModelViewSet):
