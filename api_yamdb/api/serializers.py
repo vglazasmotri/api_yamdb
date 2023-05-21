@@ -8,8 +8,8 @@ from .validators import validate_username
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True)
-    slug = serializers.SlugField(required=True)
+    name = serializers.CharField(required=True, max_length=256)
+    slug = serializers.SlugField(required=True, max_length=50)
 
     class Meta:
         model = Genre
@@ -17,8 +17,8 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True)
-    slug = serializers.SlugField(required=True)
+    name = serializers.CharField(required=True, max_length=256)
+    slug = serializers.SlugField(required=True, max_length=50)
 
     class Meta:
         model = Category
@@ -26,7 +26,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleGetSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True)
+    name = serializers.CharField(required=True, max_length=256)
     year = serializers.IntegerField(required=True)
     genre = GenreSerializer(read_only=True, many=True)
     category = CategorySerializer(read_only=True)

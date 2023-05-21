@@ -49,11 +49,11 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         return self.is_superuser or self.role == self.ADMIN
-    
+
     @property
     def is_moderator(self):
         return self.role == self.MODERATOR
-    
+
     def __str__(self):
         return self.username
 
@@ -88,9 +88,7 @@ class Title(models.Model):
         Category, on_delete=models.SET_NULL, null=True
     )
     rating = models.IntegerField(
-        verbose_name='Рейтинг',
-        null=True,
-        default=None
+        verbose_name='Рейтинг', null=True, default=None
     )
 
 
@@ -99,7 +97,8 @@ class Review(models.Model):
         Title,
         verbose_name='Произведение',
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        db_constraint=False,
     )
     text = models.TextField(
         verbose_name='Текст',
@@ -108,19 +107,18 @@ class Review(models.Model):
         User,
         verbose_name='Автор',
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        db_constraint=False,
     )
     score = models.PositiveSmallIntegerField(
         verbose_name='Рейтинг',
         validators=[
             MinValueValidator(1, 'Вариации от 1 до 10'),
-            MaxValueValidator(10, 'Вариации от 1 до 10')
-        ]
+            MaxValueValidator(10, 'Вариации от 1 до 10'),
+        ],
     )
     pub_date = models.DateTimeField(
-        verbose_name='Дата публикации',
-        auto_now_add=True,
-        db_index=True
+        verbose_name='Дата публикации', auto_now_add=True, db_index=True
     )
 
     class Meta:
@@ -129,8 +127,7 @@ class Review(models.Model):
         ordering = ['pub_date']
         constraints = [
             models.UniqueConstraint(
-                fields=['title', 'author'],
-                name='unique_review'
+                fields=['title', 'author'], name='unique_review'
             ),
         ]
 
@@ -140,7 +137,8 @@ class Comment(models.Model):
         Review,
         verbose_name='Отзывы',
         on_delete=models.CASCADE,
-        related_name='comments'
+        related_name='comments',
+        db_constraint=False,
     )
     text = models.TextField(
         verbose_name='Текст',
@@ -149,12 +147,11 @@ class Comment(models.Model):
         User,
         verbose_name='Пользователи',
         on_delete=models.CASCADE,
-        related_name='comments'
+        related_name='comments',
+        db_constraint=False,
     )
     pub_date = models.DateTimeField(
-        verbose_name='Время публикации',
-        auto_now_add=True,
-        db_index=True
+        verbose_name='Время публикации', auto_now_add=True, db_index=True
     )
 
     class Meta:
