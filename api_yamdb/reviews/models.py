@@ -2,18 +2,17 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-ADMIN = 'admin'
-MODERATOR = 'moderator'
-USER = 'user'
-
-ROLE_CHOICES = (
-    (ADMIN, ADMIN),
-    (MODERATOR, MODERATOR),
-    (USER, USER),
-)
-
 
 class User(AbstractUser):
+    ADMIN = 'admin'
+    MODERATOR = 'moderator'
+    USER = 'user'
+
+    ROLE_CHOICES = (
+        (ADMIN, ADMIN),
+        (MODERATOR, MODERATOR),
+        (USER, USER),
+    )
     username = models.SlugField(
         'Имя пользователя',
         max_length=150,
@@ -47,6 +46,14 @@ class User(AbstractUser):
         default=USER,
     )
 
+    @property
+    def is_admin(self):
+        return self.is_superuser or self.role == self.ADMIN
+    
+    @property
+    def is_moderator(self):
+        return self.role == self.MODERATOR
+    
     def __str__(self):
         return self.username
 
