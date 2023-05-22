@@ -1,14 +1,16 @@
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title, User
+from .filters import TitleFilter
 from .permissions import (
     IsAdminModeratorOwnerOrReadOnly,
     IsAdmin,
@@ -29,10 +31,12 @@ from .serializers import (
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = (
-        Title.objects.all().annotate(Avg("reviews__score")).order_by("name")
+        Title.objects.all()
     )
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
@@ -54,6 +58,11 @@ class GenreViewSet(viewsets.ModelViewSet):
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
+    def get_object(self):
+        if self.request.method == 'GET':
+            raise MethodNotAllowed(method='GET')
+        return super().get_object()
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -68,6 +77,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
+
+    def get_object(self):
+        if self.request.method == 'GET':
+            raise MethodNotAllowed(method='GET')
+        return super().get_object()
 
 
 class UserViewSet(viewsets.ModelViewSet):
