@@ -1,3 +1,4 @@
+from datetime import date
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import IntegrityError
 from django.db.models import Avg
@@ -58,25 +59,50 @@ class TitleGetSerializer(serializers.ModelSerializer):
 
 # Работает через костыли, вариантов по лучше в голову не лезет
 class TitleSerializer(TitleGetSerializer):
-    genre = serializers.SlugField(required=True)
-    category = serializers.SlugField(required=True)
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(),
+        required=False,
+        many=True,
+        slug_field='slug',
+    )
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        required=False,
+        slug_field='slug',
+    )
 
-    def create(self, validated_data):
-        if Genre.objects.filter(slug=validated_data['genre']).exists():
-            genre = Genre.objects.get(slug=validated_data['genre'])
-            validated_data.pop('genre')
-            if Category.objects.filter(
-                slug=validated_data['category']
-            ).exists():
-                category = Category.objects.get(
-                    slug=validated_data['category']
-                )
-                validated_data.pop('category')
-                title = Title(category=category, **validated_data)
-                title.save()
-                title.genre.add(genre)
-                return title
-        raise serializers.ValidationError
+    def validate_year(self, value):
+        year = date.today().year
+        if value > year:
+            raise serializers.ValidationError('Произведение ещё не вышло!')
+        return value
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['genre'] = GenreSerializer(
+            instance=instance.genre, read_only=True, many=True
+        ).data
+        representation['category'] = CategorySerializer(
+            instance=instance.category, read_only=True
+        ).data
+        return representation
+
+    # def create(self, validated_data):
+    #     if Genre.objects.filter(slug=validated_data['genre']).exists():
+    #         genre = Genre.objects.get(slug=validated_data['genre'])
+    #         validated_data.pop('genre')
+    #         if Category.objects.filter(
+    #             slug=validated_data['category']
+    #         ).exists():
+    #             category = Category.objects.get(
+    #                 slug=validated_data['category']
+    #             )
+    #             validated_data.pop('category')
+    #             title = Title(category=category, **validated_data)
+    #             title.save()
+    #             title.genre.add(genre)
+    #             return title
+    #     raise serializers.ValidationError
 
 
 class UserSerializer(serializers.ModelSerializer):

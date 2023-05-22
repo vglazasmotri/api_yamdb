@@ -10,6 +10,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title, User
+from .filters import TitleFilter
 from .permissions import (
     IsAdminModeratorOwnerOrReadOnly,
     IsAdmin,
@@ -35,7 +36,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre', 'name', 'year')
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
@@ -57,6 +58,11 @@ class GenreViewSet(viewsets.ModelViewSet):
     search_fields = ('name',)
     pagination_class = LimitOffsetPagination
 
+    def get_object(self):
+        if self.request.method == 'GET':
+            raise MethodNotAllowed(method='GET')
+        return super().get_object()
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -73,9 +79,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
 
     def get_object(self):
-        if self.request.user.is_admin:
-            return super().get_object()
-        return MethodNotAllowed
+        if self.request.method == 'GET':
+            raise MethodNotAllowed(method='GET')
+        return super().get_object()
 
 
 class UserViewSet(viewsets.ModelViewSet):
