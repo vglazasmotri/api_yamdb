@@ -1,61 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
+from users.models import User
+from .validators import validate_year
 
-
-class User(AbstractUser):
-    ADMIN = 'admin'
-    MODERATOR = 'moderator'
-    USER = 'user'
-
-    ROLE_CHOICES = (
-        (ADMIN, ADMIN),
-        (MODERATOR, MODERATOR),
-        (USER, USER),
-    )
-    username = models.SlugField(
-        'Имя пользователя',
-        max_length=150,
-        blank=False,
-        unique=True,
-    )
-    email = models.EmailField(
-        'Электронная почта',
-        unique=True,
-        max_length=254,
-    )
-    first_name = models.CharField(
-        'Имя',
-        max_length=150,
-        blank=True,
-    )
-    last_name = models.CharField(
-        'Фамилия',
-        max_length=150,
-        blank=True,
-    )
-    bio = models.TextField(
-        'Биография пользователя',
-        blank=True,
-        null=True,
-    )
-    role = models.CharField(
-        'Роль пользователя',
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default=USER,
-    )
-
-    @property
-    def is_admin(self):
-        return self.is_superuser or self.role == self.ADMIN
-
-    @property
-    def is_moderator(self):
-        return self.role == self.MODERATOR
-
-    def __str__(self):
-        return self.username
+MIN_SCORE = 1
+MAX_SCORE = 10
 
 
 class Genre(models.Model):
@@ -63,6 +12,11 @@ class Genre(models.Model):
         max_length=256, unique=True, default='Жанр отсутствует'
     )
     slug = models.SlugField(max_length=50, unique=True)
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+        ordering = ['name',]
 
     def __str__(self):
         return self.slug
@@ -74,22 +28,43 @@ class Category(models.Model):
     )
     slug = models.SlugField(max_length=50, unique=True)
 
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        ordering = ['name',]
+
     def __str__(self):
         return self.slug
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=256)
-    year = models.IntegerField()
-    rating = models.IntegerField(default=0)
-    description = models.TextField()
-    genre = models.ManyToManyField(Genre)
+    name = models.CharField(
+        verbose_name='Название', max_length=256,
+    )
+    year = models.IntegerField(
+        validators=(validate_year,), verbose_name='Год',
+    )
+    description = models.TextField(
+        verbose_name='Описание', null=True, blank=True,
+    )
+    genre = models.ManyToManyField(
+        Genre, verbose_name='Жанр', related_name='titles',
+    )
     category = models.ForeignKey(
-        Category, on_delete=models.SET_NULL, null=True
+        Category,
+        verbose_name='Категория',
+        related_name='titles',
+        on_delete=models.SET_NULL,
+        null=True,
     )
-    rating = models.IntegerField(
-        verbose_name='Рейтинг', null=True, default=None
-    )
+
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+        ordering = ['year',]
+
+    def __str__(self):
+        return self.name
 
 
 class Review(models.Model):
@@ -113,8 +88,8 @@ class Review(models.Model):
     score = models.PositiveSmallIntegerField(
         verbose_name='Рейтинг',
         validators=[
-            MinValueValidator(1, 'Вариации от 1 до 10'),
-            MaxValueValidator(10, 'Вариации от 1 до 10'),
+            MinValueValidator(MIN_SCORE, 'Вариации от 1 до 10'),
+            MaxValueValidator(MAX_SCORE, 'Вариации от 1 до 10'),
         ],
     )
     pub_date = models.DateTimeField(
@@ -130,6 +105,9 @@ class Review(models.Model):
                 fields=['title', 'author'], name='unique_review'
             ),
         ]
+
+    def __str__(self):
+        return self.text
 
 
 class Comment(models.Model):
@@ -157,4 +135,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-        ordering = ['pub_date']
+        ordering = ['pub_date',]
+
+    def __str__(self):
+        return self.text

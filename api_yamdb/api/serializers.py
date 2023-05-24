@@ -5,8 +5,10 @@ from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 
-from reviews.models import Category, Comment, Genre, Review, Title, User
-from .validators import validate_username, validate_year
+from reviews.models import Category, Comment, Genre, Review, Title
+from reviews.validators import validate_year
+from users.models import User
+from users.validators import validate_username
 
 
 class GenreSerializer(serializers.ModelSerializer):
