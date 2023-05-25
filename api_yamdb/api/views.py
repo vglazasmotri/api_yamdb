@@ -127,9 +127,9 @@ def sign_up(request):
     if serializer.is_valid():
         try:
             user, _ = User.objects.get_or_create(
-            username=request.data.get('username'),
-            email=request.data.get('email')
-        )
+                username=request.data.get('username'),
+                email=request.data.get('email'),
+            )
         except IntegrityError:
             return Response(
                 'Такой логин или email уже занят.',
