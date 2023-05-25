@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets, permissions
@@ -124,10 +125,16 @@ def sign_up(request):
     """
     serializer = SignUpSerializer(data=request.data)
     if serializer.is_valid():
-        user = User.objects.get(
+        try:
+            user, _ = User.objects.get_or_create(
             username=request.data.get('username'),
             email=request.data.get('email')
         )
+        except IntegrityError:
+            return Response(
+                'Такой логин или email уже занят.',
+                status=status.HTTP_400_BAD_REQUEST
+            )
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Подтверждение регистрации api_yamdb.',

@@ -1,5 +1,4 @@
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.db import IntegrityError
 from django.db.models import Avg
 from rest_framework import serializers, validators
 from rest_framework.exceptions import ValidationError
@@ -104,24 +103,12 @@ class SignUpSerializer(serializers.Serializer):
     Поля email и username должны быть уникальными.
     Использовать имя 'me' в качестве username запрещено.
     """
-
     username = serializers.CharField(
         required=True,
         max_length=150,
         validators=(validate_username, UnicodeUsernameValidator()),
     )
     email = serializers.EmailField(required=True, max_length=254)
-
-    def validate(self, data):
-        try:
-            User.objects.get_or_create(
-                username=data.get('username'), email=data.get('email')
-            )
-        except IntegrityError:
-            raise serializers.ValidationError(
-                'Пользователь с таким username или email уже существует.'
-            )
-        return data
 
 
 class TokenSerializer(serializers.Serializer):

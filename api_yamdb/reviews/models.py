@@ -42,7 +42,7 @@ class Title(models.Model):
         verbose_name='Название', max_length=256,
     )
     year = models.IntegerField(
-        validators=(validate_year,), verbose_name='Год',
+        validators=(validate_year,), verbose_name='Год', db_index=True,
     )
     description = models.TextField(
         verbose_name='Описание', null=True, blank=True,
@@ -88,8 +88,12 @@ class Review(models.Model):
     score = models.PositiveSmallIntegerField(
         verbose_name='Рейтинг',
         validators=[
-            MinValueValidator(MIN_SCORE, 'Вариации от 1 до 10'),
-            MaxValueValidator(MAX_SCORE, 'Вариации от 1 до 10'),
+            MinValueValidator(
+                MIN_SCORE, f'Вариации от {MIN_SCORE} до {MAX_SCORE}'
+            ),
+            MaxValueValidator(
+                MAX_SCORE, f'Вариации от {MIN_SCORE} до {MAX_SCORE}'
+            ),
         ],
     )
     pub_date = models.DateTimeField(
