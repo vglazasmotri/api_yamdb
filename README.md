@@ -22,7 +22,7 @@ git clone git@github.com:vglazasmotri/api_yamdb.git
 cd api_yamdb
 ```
 
-Eстанавливаем виртуальное окружение:
+Устанавливаем виртуальное окружение:
 
 ```
 python -m venv venv
